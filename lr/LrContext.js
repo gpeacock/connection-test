@@ -21,6 +21,8 @@ function _createUuid() {
 
 class LrContext {
 	constructor(session, account, catalog) {
+		account = account || session.account
+		catalog = catalog || session.catalog
 		this.account = account
 		this.catalog = catalog
 		this.chunkSize = 20 * 1024 * 1024 // minimum chunk size of 32K except last one
