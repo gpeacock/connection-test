@@ -1,6 +1,5 @@
 const express = require('express')
 const router = express.Router()
-//const Lr = require('./lr')
 const request = require('request-promise');
 const bodyParser = require('body-parser');
 const LrSession = require('../lr/LrSession')
@@ -55,12 +54,19 @@ router.use((req, res, next) => {
 })
 
 
-router.get('/', asyncWrap( async (req, res) => {
-	let lr = await LrSession.currentContextP()
-	let result = await lr.getAlbumsP('project_set%3Bproject')
-	console.log(JSON.stringify(result, null, 2))
-	res.render('index', { response: JSON.stringify(result, null, 2) })
-}))
+const getAlbumsList = async (lr) => {
+	let albums = await lr.getAlbumsP('project_set%3Bproject')
+	let albumsList = []
+
+	albums.forEach((album) => {
+		let name = dref(album,'payload','name')
+		albumsList.push({
+			id: album.id,
+			name: name,
+		})
+	})
+	return albumsList
+}
 
 const getAlbumData = async (lr, album) => {
 	let name = dref(album,'payload','name')
@@ -87,32 +93,48 @@ const getAlbumData = async (lr, album) => {
 	return albumData
 }
 
-// handles project create and resend from lightroom desktop
-router.get('/redirect', asyncWrap( async (req, res) => {
-	let lr = await LrSession.currentContextP()
-	let album = await lr.getAlbumP(req.query.project_id)
+
+const updateAlbum = async (lr, album) => {
 	let payload =  dref(album, 'payload' )
 	let publishInfo = dref(album, 'payload','publishInfo')
-	let remoteLinks = dref(album, 'payload','publishInfo','emoteLinks' )
+	let remoteLinks = dref(album, 'payload','publishInfo','remoteLinks' )
 	if (remoteLinks==null) {
 		let updateTimestamp = (new Date()).toISOString()
 		publishInfo.updated = updateTimestamp
 		publishInfo.remoteLinks = {
 			view: "https://localhost:8000/view"
 		}
+		// can't call this until the apis are updated to support POST
 		//let result = await lr.updateAlbumP(req.query.project_id, 'project', payload)
 		console.log("add remoteLinks here")
 	}
-	let response = await getAlbumData(lr, album)
+}
 
-	res.render('album', { album: response, response: JSON.stringify(response, null, 2) })
+router.get('/', asyncWrap( async (req, res) => {
+
+	let lr = await LrSession.currentContextP()
+	let albums = await getAlbumsList(lr)
+	let album = await lr.getAlbumP( albums[0].id)
+	let response = await getAlbumData(lr, album)
+	res.render('album', { albums: albums, album: response, response: JSON.stringify(response, null, 2) })
+}))
+
+// handles project create and resend from lightroom desktop
+router.get('/redirect', asyncWrap( async (req, res) => {
+	let lr = await LrSession.currentContextP()
+	let album = await lr.getAlbumP(req.query.project_id)
+	await updateAlbum(lr, album)
+	let response = await getAlbumData(lr, album)
+	let albums = await getAlbumsList(lr)
+	res.render('album', { albums: albums, album: response, response: JSON.stringify(response, null, 2) })
 }))
 
 router.get('/view', asyncWrap( async (req, res) => {
 	let lr = await LrSession.currentContextP()
 	let album = await lr.getAlbumP(req.query.project_id)
 	let response = await getAlbumData(lr, album)
-	res.render('album', { album: response, response: JSON.stringify(response, null, 2) })
+	let albums = await getAlbumsList(lr)
+	res.render('album', { albums: albums, album: response, response: JSON.stringify(response, null, 2) })
 }))
 
 router.get('/thumb/:assetId', asyncWrap( async (req, res) => {
@@ -124,8 +146,7 @@ router.get('/thumb/:assetId', asyncWrap( async (req, res) => {
 }))
 
 router.get('/learn', (req, res, next) => {
-	res.status(200).send("learning");
-	next();
+	res.render('learn');
 })
 
 module.exports = router
