@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const request = require('request-promise');
 const bodyParser = require('body-parser');
+const LrContext = require('../lr/LrContext')
 const LrSession = require('../lr/LrSession')
 const LrUtils = require('../lr/LrUtils')
 router.use(bodyParser.raw({limit: '200mb'})) // middleware for uploading binaries
@@ -12,19 +13,20 @@ const asyncWrap = fn =>
 	function asyncUtilWrap (req, res, next, ...args) {
     	const fnReturn = fn(req, res, next, ...args)
     	return Promise.resolve(fnReturn).catch(next)
-	}
+}
 
-// log requests and errors to console
+// if not logged in, then perform Oath redirect sequence
 router.use((req, res, next) => {
-	if (!req.session.token && req.path != "/callback") {
+	if (!req.session.lrSession && req.path != "/callback") {
 		console.log(`login redirect for +${req.originalUrl}`)
 		res.redirect(`https://ims-na1.adobelogin.com/ims/authorize?client_id=${process.env.KEY}&scope=openid, lr_partner_apis&response_type=code&redirect_uri=https://localhost:8000/callback?redirect_uri=https://localhost:8000${req.originalUrl}`)
 	} else {
 		next()
 	}
-  });	
+});	
   
-  router.get('/callback', function(req, res) {
+// handle callback from oath site with redirect to original URL
+router.get('/callback', asyncWrap( function(req, res) {
 	/* Retrieve authorization code from request */
 	let code = req.query.code;
 	// passing a redirect_uri inside the auth redirect_uri allows continuing an operation after login
@@ -38,10 +40,11 @@ router.use((req, res, next) => {
 
 	/* Send a POST request using the request library */
 	request(requestOptions)
-		.then(function (response) {
+		.then(async (response) => {
 			/* Store the token in req.session.token */
-			req.session.token = response.access_token;
+			//req.session.token = response.access_token;
 			process.env.TOKEN = response.access_token;
+			req.session.lrSession = await LrSession.currentP()
 			if (redirect_uri) {
 				res.redirect( redirect_uri )
 			} else {
@@ -51,7 +54,7 @@ router.use((req, res, next) => {
     	.catch(function (error) {
     		res.render('index', {'response':'Log in failed!'});
     	});
-})
+}))
 
 
 const getAlbumsList = async (lr) => {
@@ -111,8 +114,7 @@ const updateAlbum = async (lr, album) => {
 }
 
 router.get('/', asyncWrap( async (req, res) => {
-
-	let lr = await LrSession.currentContextP()
+	let lr = new LrContext(req.session.lrSession)
 	let albums = await getAlbumsList(lr)
 	let album = await lr.getAlbumP( albums[0].id)
 	let response = await getAlbumData(lr, album)
@@ -121,7 +123,7 @@ router.get('/', asyncWrap( async (req, res) => {
 
 // handles project create and resend from lightroom desktop
 router.get('/redirect', asyncWrap( async (req, res) => {
-	let lr = await LrSession.currentContextP()
+	let lr = new LrContext(req.session.lrSession)
 	let album = await lr.getAlbumP(req.query.project_id)
 	await updateAlbum(lr, album)
 	let response = await getAlbumData(lr, album)
@@ -130,7 +132,7 @@ router.get('/redirect', asyncWrap( async (req, res) => {
 }))
 
 router.get('/view', asyncWrap( async (req, res) => {
-	let lr = await LrSession.currentContextP()
+	let lr = new LrContext(req.session.lrSession)
 	let album = await lr.getAlbumP(req.query.project_id)
 	let response = await getAlbumData(lr, album)
 	let albums = await getAlbumsList(lr)
@@ -138,7 +140,7 @@ router.get('/view', asyncWrap( async (req, res) => {
 }))
 
 router.get('/thumb/:assetId', asyncWrap( async (req, res) => {
-	let lr = await LrSession.currentContextP()
+	let lr = new LrContext(req.session.lrSession)
 	let assetId = req.params.assetId
 	let thumb = await lr.getAssetThumbnailRenditionP(assetId)
 	res.contentType('image/jpeg');

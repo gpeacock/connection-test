@@ -66,6 +66,7 @@ LrSession = {
 		_lr = new LrContext(session, account, catalog)
 		return _lr
 	}
+	
 }
 
 module.exports = LrSession
