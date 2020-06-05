@@ -4,18 +4,15 @@ const app = express();
 const session = require('express-session')
 const request = require('request-promise');
 const https = require('https');
-//const http = require('http');
 const bodyParser = require('body-parser');
 
 const fs = require('fs');
 const path = require('path');
 
-// Read values from .env -> you must creeate a .env with these vaues...
-const adobeApiKey = process.env.KEY;
-const adobeApiSecret = process.env.SECRET;
-const hostname = process.env.HOST;
-const port = process.env.PORT;
-const sessionSecret =  process.env.SESSIONSECRET
+// these should be defined in .env
+const hostname = process.env.HOST || 'localhost';
+const port = process.env.PORT || 8000;
+const sessionSecret =  process.env.SESSIONSECRET || 'session_secret'
 
 /* Middlewares */
 app.use(bodyParser.json());

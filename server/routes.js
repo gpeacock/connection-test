@@ -15,6 +15,30 @@ const asyncWrap = fn =>
     	return Promise.resolve(fnReturn).catch(next)
 }
 
+let UserData = {
+	_users: {},
+
+	get: function(accountId) {
+		return UserData._users[accountId]
+	},
+
+	set: function(sessionData) {
+		let account = sessionData.account
+		let user = {
+			timestamp: (new Date()).toISOString(), // when this user data was updated
+			sessionData: sessionData,
+			account_id: account.id,
+			catalog_id: sessionData.id,
+			full_name: account.full_name,
+			email: account.email,
+			status: account.entitlement.status,
+			storage_used: account.entitlement.storage.used,
+			storage_limit: account.entitlement.storage.limit
+		}
+		return UserData._users[account.id] = user
+	}
+}
+
 // if not logged in, then perform Oath redirect sequence
 router.use((req, res, next) => {
 	if (!req.session.lrSession && req.path != "/callback") {
@@ -41,10 +65,12 @@ router.get('/callback', asyncWrap( function(req, res) {
 	/* Send a POST request using the request library */
 	request(requestOptions)
 		.then(async (response) => {
-			/* Store the token in req.session.token */
-			//req.session.token = response.access_token;
+			// use the returned token to fetch account and catalog date from Lr
 			process.env.TOKEN = response.access_token;
-			req.session.lrSession = await LrSession.currentP()
+			let sessionData = await LrSession.currentP()
+			//req.session.account_id = sessionData.account.account_id
+			req.session.lrSession = sessionData
+			//UserData.set(sessionData.account, sessionData.catalog) 
 			if (redirect_uri) {
 				res.redirect( redirect_uri )
 			} else {
@@ -114,11 +140,22 @@ const updateAlbum = async (lr, album) => {
 }
 
 router.get('/', asyncWrap( async (req, res) => {
+/* 	let userData =UserData.get(req.session.account_id)
+	let albumsList = userData.albumsList ||  await getAlbumsList(lr)
+	let albumId =  albumsList[0].id
+	let album = userData.albums[album.id] */
 	let lr = new LrContext(req.session.lrSession)
 	let albums = await getAlbumsList(lr)
 	let album = await lr.getAlbumP( albums[0].id)
 	let response = await getAlbumData(lr, album)
 	res.render('album', { albums: albums, album: response, response: JSON.stringify(response, null, 2) })
+}))
+
+// handles project create and resend from lightroom desktop
+router.get('/albums', asyncWrap( async (req, res) => {
+	let lr = new LrContext(req.session.lrSession)
+	let albums = await getAlbumsList(lr)
+	res.render('albumList', { albums: albums, response: JSON.stringify(albums, null, 2) })
 }))
 
 // handles project create and resend from lightroom desktop

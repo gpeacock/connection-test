@@ -6,16 +6,18 @@ html
     body
         header
             h1 #{album.name}
-        .sidenav
-            each album in albums
-                a( href=`view?project_id=${album.id}`) #{album.name}
-        ul
-            each asset, i in album.assets
-                if i % 5 == 0
-                    li
-                li.column 
-                    img(src=asset.thumb height=200 )
-                    br 
-                    asset.name
-        .canvas
-            textarea(id='text' cols=80 rows=30) #{response}
+        main
+            .sidenav
+                each album in albums
+                    a( href=`view?project_id=${album.id}`) #{album.name}
+        content
+            ul
+                each asset, i in album.assets
+                    if i % 5 == 0
+                        li
+                    li.column 
+                        img(src=asset.thumb height=200 )
+                        br 
+                        asset.name
+            .canvas
+                textarea(id='text' cols=80 rows=30) #{response}
