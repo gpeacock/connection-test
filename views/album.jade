@@ -6,6 +6,9 @@ html
     body
         header
             h1 #{album.name}
+        .sidenav
+            each album in albums
+                a( href=`view?project_id=${album.id}`) #{album.name}
         ul
             each asset, i in album.assets
                 if i % 5 == 0
