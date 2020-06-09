@@ -1,7 +1,7 @@
 {
-  "name": "adobe-auth-node",
+  "name": "connection-test",
   "version": "1.0.0",
-  "description": "adobe auth node example",
+  "description": "Lightroom Connection example",
   "main": "index.js",
   "scripts": {
     "start": "node ./server/index.js",
