@@ -15,12 +15,13 @@ const asyncWrap = fn =>
     	return Promise.resolve(fnReturn).catch(next)
 }
 
-let baseUrl = `https://${process.env.HOST}:${process.env.PORT}`
+let baseUrl = process.env.BASEURL || `https://${process.env.HOST}:${process.env.PORT}`
+let scope = process.env.SCOPE || openid,lr_partner_apis
 
 const getContext = async (req, res, next) => {
 	// if we don't have a token, use ims redirect to login and get one
 	if (!process.env.TOKEN) {
-		res.redirect(`https://ims-na1.adobelogin.com/ims/authorize?client_id=${process.env.KEY}&scope=openid,lr_partner_apis&response_type=code&redirect_uri=${baseUrl}/callback?redirect_uri=${baseUrl}${req.originalUrl}`)
+		res.redirect(`https://ims-na1.adobelogin.com/ims/authorize?client_id=${process.env.KEY}&scope=${scope}&response_type=code&redirect_uri=${baseUrl}/callback?redirect_uri=${baseUrl}${req.originalUrl}`)
 	}
 	// we have a token, if we don't have a session yet, create one
 	if (!req.session.lrSession ) {
@@ -150,6 +151,22 @@ router.get('/thumb/:assetId', asyncWrap( async (req, res) => {
 
 router.get('/learn', (req, res, next) => {
 	res.render('learn');
+})
+
+router.get('/config', (req, res, next) => {
+	let locale = req.query.locale  // requested language
+	res.json( {
+		"status": "prod",
+		"serviceId": "6e20a4fad90a4f30b0825d95d62c7945",
+		"urlId":  "ctst",
+		"name":  "Connection Test",
+		"title": "Connection Test",
+		"description" : "Testing Lightroom connections from localhost",
+		"learnHref" : "https://localhost:8000/learn",
+		"siteHref" : "https://localhost:8000",
+		"redirectHref": "https://localhost:8000/redirect",
+		"imageHref" : "http://localhost:8000/icon.png"
+	})
 })
 
 module.exports = router

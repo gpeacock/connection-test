@@ -52,8 +52,8 @@ let _getExistingCatalogP = async (session) => {
 LrSession = {
 	currentP: async () => {
 		let session = await LrAuth.authenticateP()
-		session.account = await LrRequestor.getP(session, '/v2/account')
-		session.catalog = await LrRequestor.getP(session, '/v2/catalog')
+		session.account = await LrRequestor.getP(session, process.env.LRHOST ? '/v2/accounts/00000000000000000000000000000000' : '/v2/account')
+		session.catalog = await LrRequestor.getP(session, process.env.LRHOST ? '/v2/catalogs/00000000000000000000000000000000' : '/v2/catalog')
 		return session
 	},
 	currentContextP: async () => {

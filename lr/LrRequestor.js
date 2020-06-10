@@ -10,7 +10,7 @@ written permission of Adobe.
 */
 const https = require('https')
 
-let _lrHost = 'lr.adobe.io'
+let _lrHost = process.env.LRHOST || 'lr.adobe.io' 
 
 let _toJSON = (body) => {
 	if (body.length == 0) {
