@@ -22,6 +22,7 @@ const getContext = async (req, res, next) => {
 	// if we don't have a token, use ims redirect to login and get one
 	if (!process.env.TOKEN) {
 		res.redirect(`https://ims-na1.adobelogin.com/ims/authorize?client_id=${process.env.KEY}&scope=${scope}&response_type=code&redirect_uri=${baseUrl}/callback?redirect_uri=${baseUrl}${req.originalUrl}`)
+		return null
 	}
 	// we have a token, if we don't have a session yet, create one
 	if (!req.session.lrSession ) {
@@ -32,7 +33,7 @@ const getContext = async (req, res, next) => {
 }
 
 // handle callback from oath site with redirect to original URL
-router.get('/callback', asyncWrap( function(req, res) {
+router.get('/callback', asyncWrap( function(req, res, next) {
 	// Retrieve authorization code from request
 	let code = req.query.code;
 	// passing a redirect_uri inside the auth redirect_uri allows continuing an operation after login
@@ -109,18 +110,20 @@ const updateAlbum = async (lr, album) => {
 			view: `${baseUrl}/view`
 		}
 		// can't call this until the apis are updated to support POST
-		//let result = await lr.updateAlbumP(req.query.project_id, 'project', payload)
+		let result = await lr.updateAlbumP(req.query.project_id, 'project', payload)
 		console.log("add remoteLinks here")
 	}
 }
 
 const showAlbumView = async ( req, res, next, albumId) => {
 	let lr = await getContext(req, res)
-	let albums = await getAlbumsList(lr)
-	albumId = albumId || albums[0].id
-	let album = await lr.getAlbumP( albumId )
-	let albumData = await getAlbumData(lr, album)
-	res.render('album', { albums: albums, album: albumData, response: JSON.stringify(albumData, null, 2) })
+	if (lr) {
+		let albums = await getAlbumsList(lr)
+		albumId = albumId || albums[0].id
+		let album = await lr.getAlbumP( albumId )
+		let albumData = await getAlbumData(lr, album)
+		res.render('album', { albums: albums, album: albumData, response: JSON.stringify(albumData, null, 2) })
+	}
 }
 
 router.get('/', asyncWrap( async (req, res, next) => {
@@ -130,12 +133,14 @@ router.get('/', asyncWrap( async (req, res, next) => {
 // handles project create and resend from lightroom desktop
 router.get('/redirect', asyncWrap( async (req, res) => {
 	let lr = await getContext(req, res)
-	let album = await lr.getAlbumP(req.query.project_id)
-	await updateAlbum(lr, album)
-	let response = await getAlbumData(lr, album)
-	let albums = await getAlbumsList(lr)
-	res.render('album', { albums: albums, album: response, response: JSON.stringify(response, null, 2) })
-}))
+	if (lr) {
+		let album = await lr.getAlbumP(req.query.project_id)
+		await updateAlbum(lr, album)
+		let response = await getAlbumData(lr, album)
+		let albums = await getAlbumsList(lr)
+		res.render('album', { albums: albums, album: response, response: JSON.stringify(response, null, 2) })
+	}
+	}))
 
 router.get('/view', asyncWrap( async (req, res, next) => {
 	await showAlbumView(req, res, next, req.query.project_id)
@@ -143,10 +148,12 @@ router.get('/view', asyncWrap( async (req, res, next) => {
 
 router.get('/thumb/:assetId', asyncWrap( async (req, res) => {
 	let lr = await getContext(req, res)
-	let assetId = req.params.assetId
-	let thumb = await lr.getAssetThumbnailRenditionP(assetId)
-	res.contentType('image/jpeg');
-	res.send(thumb);
+	if (lr) {
+		let assetId = req.params.assetId
+		let thumb = await lr.getAssetThumbnailRenditionP(assetId)
+		res.contentType('image/jpeg');
+		res.send(thumb);
+	}
 }))
 
 router.get('/learn', (req, res, next) => {
@@ -165,7 +172,7 @@ router.get('/config', (req, res, next) => {
 		"learnHref" : "https://localhost:8000/learn",
 		"siteHref" : "https://localhost:8000",
 		"redirectHref": "https://localhost:8000/redirect",
-		"imageHref" : "http://localhost:8000/icon.png"
+		"iconHref" : "http://localhost:8000/icon.png"
 	})
 })
 
