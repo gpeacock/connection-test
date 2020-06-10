@@ -31,11 +31,19 @@ app.use(session({
 
 app.use(require('./routes'))
 
-/* Set up a HTTPS server with the signed certification */
-var httpsServer = https.createServer({
-	key: fs.readFileSync(path.join(__dirname, '../certs/key.pem')),
-	cert: fs.readFileSync(path.join(__dirname, '../certs/cert.pem'))
-}, app).listen(port, hostname, (err) => {
-	if (err) console.log(`Error: ${err}`);
-	console.log(`listening on port ${port}!`);
+// if we have local certs then set up an https server
+if (fs.existsSync(path.join(__dirname, '../certs/key.pem'))) {
+    /* Set up a HTTPS server with the signed certification */
+    var httpsServer = https.createServer({
+        key: fs.readFileSync(path.join(__dirname, '../certs/key.pem')),
+        cert: fs.readFileSync(path.join(__dirname, '../certs/cert.pem'))
+    }, app).listen(port, hostname, (err) => {
+        if (err) console.log(`Error: ${err}`);
+        console.log(`${Date.now()} Server started on port ${port}`);
+    });
+} else {
+
+app.listen(port, () => {
+    console.log(`${Date.now()} Server started on port ${port}`);
 });
+}
