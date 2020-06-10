@@ -32,8 +32,9 @@ app.use(session({
 app.use(require('./routes'))
 
 // if we have local certs then set up an https server
+
 if (fs.existsSync(path.join(__dirname, '../certs/key.pem'))) {
-    /* Set up a HTTPS server with the signed certification */
+    // Set up a HTTPS server with the signed certification 
     var httpsServer = https.createServer({
         key: fs.readFileSync(path.join(__dirname, '../certs/key.pem')),
         cert: fs.readFileSync(path.join(__dirname, '../certs/cert.pem'))
