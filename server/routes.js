@@ -107,10 +107,14 @@ const updateAlbum = async (lr, album) => {
 		let updateTimestamp = (new Date()).toISOString()
 		publishInfo.updated = updateTimestamp
 		publishInfo.remoteLinks = {
-			view: `${baseUrl}/view`
+			view: { 
+				href: `${baseUrl}/view` 
+			}
 		}
 		// can't call this until the apis are updated to support POST
-		//let result = await lr.updateAlbumP(album.id, 'project', payload)
+		if (process.env.SCOPE) { // allow if scope is overridden
+			let result = await lr.updateAlbumP(album.id, 'project', payload)
+		}
 		console.log("add remoteLinks here")
 	}
 }
