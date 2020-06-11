@@ -151,6 +151,15 @@ router.get('/view', asyncWrap( async (req, res, next) => {
 	await showAlbumView(req, res, next, req.query.project_id)
 }))
 
+// not really right to use a get for a delete...
+router.get('/deleteProject/:projectId', asyncWrap( async (req, res, next) => {
+	let lr = await getContext(req, res)
+	if (lr) {
+		let result = await lr.deleteAlbumP(req.params.projectId)
+	}
+	res.redirect('/')
+}))
+
 router.get('/thumb/:assetId', asyncWrap( async (req, res) => {
 	let lr = await getContext(req, res)
 	if (lr) {
