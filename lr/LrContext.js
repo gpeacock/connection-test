@@ -178,6 +178,10 @@ class LrContext {
 		return albumId
 	}
 
+	async deleteAlbumP ( albumId ) {
+		let path = `/v2/catalogs/${this._catalogId}/albums/${albumId}`
+		LrRequestor.deleteP(this._session, path)
+	}
 
 	putMasterP(path, mime, offset, size, data) {
 		console.log(`Received ${data.length} bytes of data at ${offset}`)
