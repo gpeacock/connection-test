@@ -29,7 +29,7 @@ let _onEnd = (res, body, resolve, reject) => {
 		console.log("Error:"+string)
 		reject({
 			statusCode: res.statusCode,
-			error: _toJSON(body)
+			error: body
 		})
 	}
 	else {
