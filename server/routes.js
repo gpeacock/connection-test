@@ -103,19 +103,20 @@ const updateAlbum = async (lr, album) => {
 	let payload =  dref(album, 'payload' )
 	let publishInfo = dref(album, 'payload','publishInfo')
 	let remoteLinks = dref(album, 'payload','publishInfo','remoteLinks' )
-	if (remoteLinks==null) {
-		let updateTimestamp = (new Date()).toISOString()
-		publishInfo.updated = updateTimestamp
-		publishInfo.remoteLinks = {
-			view: { 
-				href: `${baseUrl}/view` 
-			}
+	
+	let updateTimestamp = (new Date()).toISOString()
+	if (!dref(album, 'payload','publishInfo','created')) {
+		publishInfo.created = updateTimestamp
+	}
+	publishInfo.updated = updateTimestamp
+	publishInfo.remoteLinks = {
+		view: { 
+			href: `${baseUrl}/view?project_id=${album.id}` 
 		}
-		// can't call this until the apis are updated to support POST
-		if (process.env.SCOPE) { // allow if scope is overridden
-			let result = await lr.updateAlbumP(album.id, 'project', payload)
-		}
-		console.log("add remoteLinks here")
+	}
+	// can't call this until the apis are updated to support POST
+	if (process.env.SCOPE) { // allow if scope is overridden
+		let result = await lr.updateAlbumP(album.id, 'project', payload)
 	}
 }
 
