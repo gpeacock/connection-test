@@ -16,7 +16,7 @@ const asyncWrap = fn =>
 }
 
 let baseUrl = process.env.BASEURL || `https://${process.env.HOST}:${process.env.PORT}`
-let scope = process.env.SCOPE || openid,lr_partner_apis
+let scope = process.env.SCOPE || "openid,lr_partner_apis"
 
 const getContext = async (req, res, next) => {
 	// if we don't have a token, use ims redirect to login and get one
@@ -110,7 +110,7 @@ const updateAlbum = async (lr, album) => {
 			view: `${baseUrl}/view`
 		}
 		// can't call this until the apis are updated to support POST
-		let result = await lr.updateAlbumP(req.query.project_id, 'project', payload)
+		//let result = await lr.updateAlbumP(album.id, 'project', payload)
 		console.log("add remoteLinks here")
 	}
 }
@@ -156,23 +156,27 @@ router.get('/thumb/:assetId', asyncWrap( async (req, res) => {
 	}
 }))
 
+// won't work in lrD from localhost (see notes on config route)
 router.get('/learn', (req, res, next) => {
 	res.render('learn');
 })
 
+// dynamically generated configuration example for Lightroom desktop
+// insert full url to this route in the desktip config.lua - Connections = { "https://myserver.com/config" }
+// Note: this won't work from localhost because lrD requires https with known CA certificates
 router.get('/config', (req, res, next) => {
 	let locale = req.query.locale  // requested language
 	res.json( {
 		"status": "prod",
-		"serviceId": "6e20a4fad90a4f30b0825d95d62c7945",
+		"serviceId": `${process.env.KEY}`,
 		"urlId":  "ctst",
 		"name":  "Connection Test",
 		"title": "Connection Test",
 		"description" : "Testing Lightroom connections from localhost",
-		"learnHref" : "https://localhost:8000/learn",
-		"siteHref" : "https://localhost:8000",
-		"redirectHref": "https://localhost:8000/redirect",
-		"iconHref" : "http://localhost:8000/icon.png"
+		"learnHref" : `${baseUrl}/learn`,
+		"siteHref" : `${baseUrl}`,
+		"redirectHref":`${baseUrl}/redirect`,
+		"iconHref" : `${baseUrl}/icon.png`
 	})
 })
 
